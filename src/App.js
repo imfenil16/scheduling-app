@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
-import StaffSelect from './components/staffselect';
+import ShiftTable from './components/shift-table';
+import LoadSection from './components/load-section';
 
 const staffMembers = ['X1', 'X2', 'X3', 'X4', 'X5', 'X6', 'X7'];
 
@@ -17,7 +18,7 @@ const timeSlots = [
   'Afternoon Parking Lot',
 ];
 
-function App() {
+const App = () => {
   const [schedule, setSchedule] = useState({});
 
   const handleStaffSelect = (day, timeSlot, staff) => {
@@ -73,25 +74,7 @@ function App() {
         [timeSlot]: staff,
       },
     }));
-  };
-
-  const countStaffLoad = (staff, day) => {
-    const daySchedule = schedule[day] || {};
-    return Object.values(daySchedule).filter(
-      (staffMember) => staffMember === staff
-    ).length;
-  };
-
-  const calculateTotalLoad = (staff) => {
-    let totalLoad = 0;
-    timeSlots.forEach((timeSlot) => {
-      Object.values(schedule).forEach((daySchedule) => {
-        if (daySchedule[timeSlot] === staff) {
-          totalLoad++;
-        }
-      });
-    });
-    return totalLoad;
+    calculateStaffNeeded();
   };
 
   const randomizeEmptyShifts = () => {
@@ -105,121 +88,76 @@ function App() {
           [staffPool[i], staffPool[j]] = [staffPool[j], staffPool[i]];
         }
 
-        const day = 'Monday'; // You can adjust the day for randomization
+        // Randomly select a day for assignment
+        const randomDay = [
+          'Monday',
+          'Tuesday',
+          'Wednesday',
+          'Thursday',
+          'Friday',
+        ][Math.floor(Math.random() * 5)];
         const staff = staffPool.pop();
-        handleStaffSelect(day, timeSlot, staff);
+        handleStaffSelect(randomDay, timeSlot, staff);
       }
     });
+    calculateStaffNeeded();
   };
 
   const calculateStaffNeeded = () => {
     const neededStaff = {};
 
     timeSlots.forEach((timeSlot) => {
-      const daySchedule = schedule[timeSlot] || {};
+      ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].forEach(
+        (day) => {
+          const daySchedule = schedule[day] || {};
+          const staffAssigned = daySchedule[timeSlot];
 
-      staffMembers.forEach((staff) => {
-        if (!daySchedule[staff]) {
-          if (!neededStaff[staff]) {
-            neededStaff[staff] = 1;
-          } else {
-            neededStaff[staff]++;
+          if (!staffAssigned) {
+            if (!neededStaff[day]) {
+              neededStaff[day] = [];
+            }
+            neededStaff[day].push(timeSlot);
           }
         }
-      });
+      );
     });
 
-    console.log('Staff needed for each time slot:');
+    console.log('Staff needed to fill all shifts while respecting the rules:');
     console.log(neededStaff);
   };
 
   return (
     <div className='container mx-auto p-8'>
-      <h1 className='text-2xl mb-4 text-center'>Schedule</h1>
-      {/* <div>
+      <h1 className='text-2xl text-center'>Schedule</h1>
+      <div className='flex justify-center items-center gap-5 my-5'>
         <button
           onClick={randomizeEmptyShifts}
-          className='bg-blue-500 text-white px-4 py-2 mt-4 rounded'
+          className='bg-blue-500 text-white px-4 py-2 rounded'
         >
           Randomize Empty Shifts
         </button>
         <button
           onClick={calculateStaffNeeded}
-          className='bg-green-500 text-white px-4 py-2 mt-4 rounded'
+          className='bg-green-500 text-white px-4 py-2 rounded'
         >
           Calculate Staff Needed
         </button>
-      </div> */}
-      <table className='table-auto border border-collapse w-full'>
-        <thead>
-          <tr className='w-full text-center border'>
-            <th></th>
-            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(
-              (day) => (
-                <th key={day} className='text-center border'>
-                  {day}
-                </th>
-              )
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {timeSlots.map((timeSlot) => (
-            <tr key={timeSlot}>
-              <td className='font-medium text-center border'>{timeSlot}</td>
-              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(
-                (day) => (
-                  <td key={day}>
-                    <StaffSelect
-                      value={schedule[day]?.[timeSlot] || ''}
-                      onChange={(e) =>
-                        handleStaffSelect(day, timeSlot, e.target.value)
-                      }
-                      staffMembers={staffMembers}
-                    />
-                  </td>
-                )
-              )}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      </div>
+      <ShiftTable
+        schedule={schedule}
+        handleStaffSelect={handleStaffSelect}
+        staffMembers={staffMembers}
+        timeSlots={timeSlots}
+      />
 
       <h2 className='text-2xl my-4 text-center'>Load Section</h2>
-      <table className='table-auto border border-collapse w-full'>
-        <thead>
-          <tr className='text-center border'>
-            <th>Staff Member</th>
-            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(
-              (day) => (
-                <th key={day} className='text-center border'>
-                  {day}
-                </th>
-              )
-            )}
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {staffMembers.map((staff) => (
-            <tr key={staff}>
-              <td className='text-center border'>{staff}</td>
-              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(
-                (day) => (
-                  <td key={day} className='text-center border'>
-                    {countStaffLoad(staff, day)}
-                  </td>
-                )
-              )}
-              <td className='text-center border'>
-                {calculateTotalLoad(staff)}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <LoadSection
+        schedule={schedule}
+        staffMembers={staffMembers}
+        timeSlots={timeSlots}
+      />
     </div>
   );
-}
+};
 
 export default App;
