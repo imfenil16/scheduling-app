@@ -94,16 +94,71 @@ function App() {
     return totalLoad;
   };
 
+  const randomizeEmptyShifts = () => {
+    const staffPool = [...staffMembers];
+
+    timeSlots.forEach((timeSlot) => {
+      if (!schedule[timeSlot]) {
+        // Shuffle the staffPool to randomize staff assignment
+        for (let i = staffPool.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [staffPool[i], staffPool[j]] = [staffPool[j], staffPool[i]];
+        }
+
+        const day = 'Monday'; // You can adjust the day for randomization
+        const staff = staffPool.pop();
+        handleStaffSelect(day, timeSlot, staff);
+      }
+    });
+  };
+
+  const calculateStaffNeeded = () => {
+    const neededStaff = {};
+
+    timeSlots.forEach((timeSlot) => {
+      const daySchedule = schedule[timeSlot] || {};
+
+      staffMembers.forEach((staff) => {
+        if (!daySchedule[staff]) {
+          if (!neededStaff[staff]) {
+            neededStaff[staff] = 1;
+          } else {
+            neededStaff[staff]++;
+          }
+        }
+      });
+    });
+
+    console.log('Staff needed for each time slot:');
+    console.log(neededStaff);
+  };
+
   return (
     <div className='container mx-auto p-8'>
-      <h1 className='text-2xl mb-4'>Schedule</h1>
+      <h1 className='text-2xl mb-4 text-center'>Schedule</h1>
+      {/* <div>
+        <button
+          onClick={randomizeEmptyShifts}
+          className='bg-blue-500 text-white px-4 py-2 mt-4 rounded'
+        >
+          Randomize Empty Shifts
+        </button>
+        <button
+          onClick={calculateStaffNeeded}
+          className='bg-green-500 text-white px-4 py-2 mt-4 rounded'
+        >
+          Calculate Staff Needed
+        </button>
+      </div> */}
       <table className='table-auto border border-collapse w-full'>
         <thead>
-          <tr>
+          <tr className='w-full text-center border'>
             <th></th>
             {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(
               (day) => (
-                <th key={day}>{day}</th>
+                <th key={day} className='text-center border'>
+                  {day}
+                </th>
               )
             )}
           </tr>
@@ -111,7 +166,7 @@ function App() {
         <tbody>
           {timeSlots.map((timeSlot) => (
             <tr key={timeSlot}>
-              <td>{timeSlot}</td>
+              <td className='font-medium text-center border'>{timeSlot}</td>
               {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(
                 (day) => (
                   <td key={day}>
@@ -130,14 +185,16 @@ function App() {
         </tbody>
       </table>
 
-      <h2 className='text-2xl my-4'>Load Section</h2>
+      <h2 className='text-2xl my-4 text-center'>Load Section</h2>
       <table className='table-auto border border-collapse w-full'>
         <thead>
-          <tr>
+          <tr className='text-center border'>
             <th>Staff Member</th>
             {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(
               (day) => (
-                <th key={day}>{day}</th>
+                <th key={day} className='text-center border'>
+                  {day}
+                </th>
               )
             )}
             <th>Total</th>
@@ -146,13 +203,17 @@ function App() {
         <tbody>
           {staffMembers.map((staff) => (
             <tr key={staff}>
-              <td>{staff}</td>
+              <td className='text-center border'>{staff}</td>
               {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(
                 (day) => (
-                  <td key={day}>{countStaffLoad(staff, day)}</td>
+                  <td key={day} className='text-center border'>
+                    {countStaffLoad(staff, day)}
+                  </td>
                 )
               )}
-              <td>{calculateTotalLoad(staff)}</td>
+              <td className='text-center border'>
+                {calculateTotalLoad(staff)}
+              </td>
             </tr>
           ))}
         </tbody>
