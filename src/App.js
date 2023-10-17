@@ -21,9 +21,10 @@ function App() {
   const [schedule, setSchedule] = useState({});
 
   const handleStaffSelect = (day, timeSlot, staff) => {
-    // Prevent consecutive lunch slots
     const currentDaySchedule = schedule[day] || {};
     const prevTimeSlot = timeSlots[timeSlots.indexOf(timeSlot) - 1];
+
+    // Level 5: Prevent Consecutive Lunch Slots
     if (
       prevTimeSlot &&
       currentDaySchedule[prevTimeSlot] === staff &&
@@ -35,6 +36,36 @@ function App() {
       return;
     }
 
+    // Level 6: Prevent More than 2 Shifts per Day
+    if (
+      Object.values(currentDaySchedule).filter((s) => s === staff).length >= 2
+    ) {
+      alert('A staff member cannot have more than 2 shifts in a day.');
+      return;
+    }
+
+    // Level 7: Prevent More than 7 Shifts per Week
+    const totalShifts = timeSlots.reduce((acc, slot) => {
+      const slotDaySchedule = schedule[day] || {};
+      return acc + (slotDaySchedule[slot] === staff ? 1 : 0);
+    }, 0);
+
+    if (totalShifts >= 7) {
+      alert('A staff member cannot have more than 7 shifts in a week.');
+      return;
+    }
+
+    // Level 8: Prevent Double Booking
+    const otherSlotOnSameDay = timeSlots.find(
+      (slot) => slot !== timeSlot && currentDaySchedule[slot] === staff
+    );
+
+    if (otherSlotOnSameDay) {
+      alert(`Staff member ${staff} cannot be in two places at once on ${day}.`);
+      return;
+    }
+
+    // Update the schedule
     setSchedule((prevSchedule) => ({
       ...prevSchedule,
       [day]: {
@@ -54,10 +85,11 @@ function App() {
   const calculateTotalLoad = (staff) => {
     let totalLoad = 0;
     timeSlots.forEach((timeSlot) => {
-      const daySchedule = schedule[timeSlot] || {};
-      if (daySchedule[staff]) {
-        totalLoad++;
-      }
+      Object.values(schedule).forEach((daySchedule) => {
+        if (daySchedule[timeSlot] === staff) {
+          totalLoad++;
+        }
+      });
     });
     return totalLoad;
   };
@@ -65,15 +97,15 @@ function App() {
   return (
     <div className='container mx-auto p-8'>
       <h1 className='text-2xl mb-4'>Schedule</h1>
-      <table>
+      <table className='table-auto border border-collapse w-full'>
         <thead>
           <tr>
             <th></th>
-            <th>Monday</th>
-            <th>Tuesday</th>
-            <th>Wednesday</th>
-            <th>Thursday</th>
-            <th>Friday</th>
+            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(
+              (day) => (
+                <th key={day}>{day}</th>
+              )
+            )}
           </tr>
         </thead>
         <tbody>
@@ -103,11 +135,11 @@ function App() {
         <thead>
           <tr>
             <th>Staff Member</th>
-            <th>Monday</th>
-            <th>Tuesday</th>
-            <th>Wednesday</th>
-            <th>Thursday</th>
-            <th>Friday</th>
+            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(
+              (day) => (
+                <th key={day}>{day}</th>
+              )
+            )}
             <th>Total</th>
           </tr>
         </thead>
